@@ -5,7 +5,7 @@ import { Label } from "./ui/label";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 
 interface LoginFormProps {
-  onLogin: (email: string, password: string) => void;
+  onLogin: (email: string, password: string) => Promise<boolean>;
   onSwitchToRegister: () => void;
   isLoading: boolean;
 }
@@ -40,10 +40,10 @@ export function LoginForm({ onLogin, onSwitchToRegister, isLoading }: LoginFormP
     return isValid;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      onLogin(email, password);
+      await onLogin(email, password);
     }
   };
 
@@ -57,7 +57,7 @@ export function LoginForm({ onLogin, onSwitchToRegister, isLoading }: LoginFormP
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="email" className="text-gray-300 text-sm font-medium">
-            EMAIL ИЛИ НОМЕР ТЕЛЕФОНА
+            EMAIL
           </Label>
           <div className="relative">
             <Input
@@ -116,15 +116,6 @@ export function LoginForm({ onLogin, onSwitchToRegister, isLoading }: LoginFormP
             <p className="text-sm text-red-400">{errors.password}</p>
           )}
         </div>
-
-        <Button
-          type="button"
-          variant="link"
-          className="text-indigo-400 hover:text-indigo-300 p-0 h-auto text-sm"
-          disabled={isLoading}
-        >
-          Забыли пароль?
-        </Button>
 
         <Button 
           type="submit" 

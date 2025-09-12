@@ -9,7 +9,7 @@ import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { Separator } from "./ui/separator";
 
 interface UserProfile {
-  id: number;
+  id: string;
   name: string;
   avatar: string;
 }
@@ -20,7 +20,7 @@ interface SettingsDialogProps {
   theme: string;
   onThemeChange: (theme: string) => void;
   userProfile: UserProfile;
-  onUserProfileUpdate: (profile: UserProfile) => void;
+  onUserProfileUpdate: (profile: { display_name: string; avatar_url: string }) => Promise<boolean>;
   onLogout?: () => void;
 }
 
@@ -52,24 +52,33 @@ export function SettingsDialog({
   const [tempName, setTempName] = useState(userProfile.name);
   const [tempAvatar, setTempAvatar] = useState(userProfile.avatar);
   const [tempTheme, setTempTheme] = useState(theme);
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
-    onThemeChange(tempTheme);
-    // Update avatar with current name if it's a generated one
-    let finalAvatar = tempAvatar;
-    if (tempAvatar.includes('ui-avatars.com')) {
-      const currentColor = avatarColors.find(c => 
-        tempAvatar.includes(`background=${c.bg.slice(1)}`)
-      ) || avatarColors[0];
-      finalAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(tempName)}&background=${currentColor.bg.slice(1)}&color=${currentColor.color.slice(1)}&size=128`;
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      onThemeChange(tempTheme);
+      
+      // Update avatar with current name if it's a generated one
+      let finalAvatar = tempAvatar;
+      if (tempAvatar.includes('ui-avatars.com')) {
+        const currentColor = avatarColors.find(c => 
+          tempAvatar.includes(`background=${c.bg.slice(1)}`)
+        ) || avatarColors[0];
+        finalAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(tempName)}&background=${currentColor.bg.slice(1)}&color=${currentColor.color.slice(1)}&size=128`;
+      }
+      
+      const success = await onUserProfileUpdate({
+        display_name: tempName,
+        avatar_url: finalAvatar
+      });
+
+      if (success) {
+        onClose();
+      }
+    } finally {
+      setSaving(false);
     }
-    
-    onUserProfileUpdate({
-      ...userProfile,
-      name: tempName,
-      avatar: finalAvatar
-    });
-    onClose();
   };
 
   const handleCancel = () => {
@@ -98,7 +107,7 @@ export function SettingsDialog({
             <Hash className="h-5 w-5 text-muted-foreground" />
             <div>
               <p className="text-sm font-medium">ID пользователя</p>
-              <p className="text-lg text-primary">#{userProfile.id}</p>
+              <p className="text-lg text-primary font-mono">{userProfile.id.slice(0, 8)}...</p>
             </div>
           </div>
 
@@ -239,11 +248,11 @@ export function SettingsDialog({
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4">
-            <Button onClick={handleCancel} variant="outline" className="flex-1">
+            <Button onClick={handleCancel} variant="outline" className="flex-1" disabled={saving}>
               Отмена
             </Button>
-            <Button onClick={handleSave} className="flex-1">
-              Сохранить
+            <Button onClick={handleSave} className="flex-1" disabled={saving}>
+              {saving ? 'Сохранение...' : 'Сохранить'}
             </Button>
           </div>
 
@@ -258,6 +267,7 @@ export function SettingsDialog({
                 }} 
                 variant="destructive" 
                 className="w-full"
+                disabled={saving}
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Выйти из аккаунта

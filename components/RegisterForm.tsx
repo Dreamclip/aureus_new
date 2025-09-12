@@ -5,7 +5,7 @@ import { Label } from "./ui/label";
 import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 
 interface RegisterFormProps {
-  onRegister: (email: string, password: string, name: string) => void;
+  onRegister: (email: string, password: string, username: string, displayName: string) => Promise<boolean>;
   onSwitchToLogin: () => void;
   onShowPrivacy: () => void;
   isLoading: boolean;
@@ -15,14 +15,16 @@ export function RegisterForm({ onRegister, onSwitchToLogin, onShowPrivacy, isLoa
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({
     email: "",
     password: "",
     confirmPassword: "",
-    name: ""
+    username: "",
+    displayName: ""
   });
 
   const validateForm = () => {
@@ -30,15 +32,27 @@ export function RegisterForm({ onRegister, onSwitchToLogin, onShowPrivacy, isLoa
       email: "",
       password: "",
       confirmPassword: "",
-      name: ""
+      username: "",
+      displayName: ""
     };
     let isValid = true;
 
-    if (!name.trim()) {
-      newErrors.name = "Имя обязательно";
+    if (!displayName.trim()) {
+      newErrors.displayName = "Имя обязательно";
       isValid = false;
-    } else if (name.trim().length < 2) {
-      newErrors.name = "Имя должно содержать минимум 2 символа";
+    } else if (displayName.trim().length < 2) {
+      newErrors.displayName = "Имя должно содержать минимум 2 символа";
+      isValid = false;
+    }
+
+    if (!username.trim()) {
+      newErrors.username = "Username обязателен";
+      isValid = false;
+    } else if (username.trim().length < 3) {
+      newErrors.username = "Username должен содержать минимум 3 символа";
+      isValid = false;
+    } else if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) {
+      newErrors.username = "Username может содержать только буквы, цифры и _";
       isValid = false;
     }
 
@@ -70,10 +84,10 @@ export function RegisterForm({ onRegister, onSwitchToLogin, onShowPrivacy, isLoa
     return isValid;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      onRegister(email, password, name.trim());
+      await onRegister(email, password, username.trim(), displayName.trim());
     }
   };
 
@@ -86,24 +100,46 @@ export function RegisterForm({ onRegister, onSwitchToLogin, onShowPrivacy, isLoa
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="name" className="text-gray-300 text-sm font-medium">
-            ИМЯ ПОЛЬЗОВАТЕЛЯ
+          <Label htmlFor="displayName" className="text-gray-300 text-sm font-medium">
+            ИМЯ
           </Label>
           <Input
-            id="name"
+            id="displayName"
             type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
             className={`
               bg-gray-800 border-gray-700 text-white placeholder-gray-500
               focus:border-indigo-500 focus:ring-indigo-500 rounded-md
-              ${errors.name ? 'border-red-500' : ''}
+              ${errors.displayName ? 'border-red-500' : ''}
             `}
             placeholder="Введите ваше имя"
             disabled={isLoading}
           />
-          {errors.name && (
-            <p className="text-sm text-red-400">{errors.name}</p>
+          {errors.displayName && (
+            <p className="text-sm text-red-400">{errors.displayName}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="username" className="text-gray-300 text-sm font-medium">
+            USERNAME
+          </Label>
+          <Input
+            id="username"
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className={`
+              bg-gray-800 border-gray-700 text-white placeholder-gray-500
+              focus:border-indigo-500 focus:ring-indigo-500 rounded-md
+              ${errors.username ? 'border-red-500' : ''}
+            `}
+            placeholder="username123"
+            disabled={isLoading}
+          />
+          {errors.username && (
+            <p className="text-sm text-red-400">{errors.username}</p>
           )}
         </div>
 
